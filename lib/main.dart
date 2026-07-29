@@ -118,7 +118,7 @@ class HomeScreen extends StatelessWidget {
           Padding(
             padding: const EdgeInsets.all(12.0),
             child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceAround,
+              mainAxisAlignment: MainAxisAlignment.spaceAround,
               children: [
                 DropdownButton<String>(
                   value: provider.selectedCategory,
@@ -145,20 +145,63 @@ class HomeScreen extends StatelessWidget {
           const Divider(),
           Expanded(
             child: provider.filteredExpenses.isEmpty
-                ? const Center(child: Text("Xərc tapılmadı"))
+                ? const Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(Icons.inbox_rounded, size: 70, color: Colors.grey),
+                  SizedBox(height: 10),
+                  Text(
+                    "Hələ ki heç bir xərc yoxdur",
+                    style: TextStyle(fontSize: 16, color: Colors.grey),
+                  ),
+                ],
+              ),
+            )
                 : ListView.builder(
               itemCount: provider.filteredExpenses.length,
               itemBuilder: (context, index) {
                 final item = provider.filteredExpenses[index];
-                return ListTile(
-                  leading: CircleAvatar(
-                    child: Text(item.category.isNotEmpty ? item.category[0] : '?'),
+
+                return Dismissible(
+                  key: Key(item.id),
+                  direction: DismissDirection.endToStart,
+                  background: Container(
+                    color: Colors.red,
+                    alignment: Alignment.centerRight,
+                    padding: const EdgeInsets.only(right: 20),
+                    child: const Icon(Icons.delete, color: Colors.white),
                   ),
-                  title: Text(item.title),
-                  subtitle: Text(item.date.toString().split(' ')[0]),
-                  trailing: Text(
-                    "\$${item.amount.toStringAsFixed(2)}",
-                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                  confirmDismiss: (direction) async {
+                    return await showDialog<bool>(
+                      context: context,
+                      builder: (ctx) => AlertDialog(
+                        title: const Text("Xərci sil"),
+                        content: const Text("Bu xərci silmək istədiyinizə əminsiniz?"),
+                        actions: [
+                          TextButton(
+                            onPressed: () => Navigator.of(ctx).pop(false),
+                            child: const Text("Ləğv et"),
+                          ),
+                          ElevatedButton(
+                            style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+                            onPressed: () => Navigator.of(ctx).pop(true),
+                            child: const Text("Sil", style: TextStyle(color: Colors.white)),
+                          ),
+                        ],
+                      ),
+                    );
+                  },
+                  child: ListTile(
+                    leading: CircleAvatar(
+                      child: Text(item.category.isNotEmpty ? item.category[0] : '?'),
+                    ),
+                    title: Text(item.title),
+                    subtitle: Text(item.date.toString().split(' ')[0]),
+                    trailing: Text(
+                      "\$${item.amount.toStringAsFixed(2)}",
+                      style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                    ),
                   ),
                 );
               },
