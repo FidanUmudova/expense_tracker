@@ -6,22 +6,22 @@ class ExpenseService {
 
   static Box<Expense> get _box => Hive.box<Expense>(_boxName);
 
-  // 1. CREATE - Yeni xərc əlavə etmək
+  //CREATE
   static Future<void> addExpense(Expense expense) async {
     await _box.put(expense.id, expense);
   }
 
-  // 2. READ - Bütün xərcləri almaq
+  //READ
   static List<Expense> getExpenses() {
     return _box.values.toList();
   }
 
-  // 3. UPDATE - Mövcud xərci yeniləmək
+  //UPDATE
   static Future<void> updateExpense(Expense expense) async {
     await expense.save();
   }
 
-  // 4. DELETE - Xərci silmək
+  //DELETE
   static Future<void> deleteExpense(String id) async {
     await _box.delete(id);
   }
