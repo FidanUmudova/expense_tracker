@@ -1,6 +1,6 @@
 import 'package:hive/hive.dart';
 
-part 'expense_model.g.dart'; // Build runner generasiya edəcək
+part 'expense_model.g.dart';
 
 @HiveType(typeId: 0)
 class Expense extends HiveObject {
@@ -14,7 +14,7 @@ class Expense extends HiveObject {
   final double amount;
 
   @HiveField(3)
-  final String category; // Məsələn: 'Food', 'Transport', 'Bills'
+  final String category;
 
   @HiveField(4)
   final DateTime date;
