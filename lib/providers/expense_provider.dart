@@ -1,43 +1,40 @@
-import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import '../models/expense_model.dart';
 
 enum SortOption { date, amount }
 
-class ExpenseProvider extends ChangeNotifier {
-  final List<Expense> _allExpenses = [];
+class ExpenseProvider with ChangeNotifier {
+  final Box<Expense> _expenseBox = Hive.box<Expense>('expenses');
+
   String _selectedCategory = 'All';
   SortOption _sortOption = SortOption.date;
 
-  // main.dart-ın istifadə etməsi üçün Getter-lər
   String get selectedCategory => _selectedCategory;
   SortOption get sortOption => _sortOption;
 
-  ExpenseProvider() {
-    _loadExpenses();
-  }
-
-  void _loadExpenses() {
-    final box = Hive.box<Expense>('expenses');
-    _allExpenses.clear();
-    _allExpenses.addAll(box.values.toList());
-    notifyListeners();
+  List<Expense> get expenses {
+    return _expenseBox.values.toList();
   }
 
   List<Expense> get filteredExpenses {
-    List<Expense> list = List.from(_allExpenses);
+    List<Expense> tempExpenses = expenses;
 
     if (_selectedCategory != 'All') {
-      list = list.where((e) => e.category == _selectedCategory).toList();
+      tempExpenses = tempExpenses
+          .where((expense) => expense.category == _selectedCategory)
+          .toList();
     }
 
-    if (_sortOption == SortOption.date) {
-      list.sort((a, b) => b.date.compareTo(a.date));
-    } else {
-      list.sort((a, b) => b.amount.compareTo(a.amount));
-    }
+    tempExpenses.sort((a, b) {
+      if (_sortOption == SortOption.date) {
+        return b.date.compareTo(a.date);
+      } else {
+        return b.amount.compareTo(a.amount);
+      }
+    });
 
-    return list;
+    return tempExpenses;
   }
 
   void setCategory(String category) {
@@ -48,5 +45,21 @@ class ExpenseProvider extends ChangeNotifier {
   void setSortOption(SortOption option) {
     _sortOption = option;
     notifyListeners();
+  }
+
+  void addExpense(Expense expense) {
+    _expenseBox.add(expense);
+    notifyListeners();
+  }
+
+  void deleteExpense(String id) {
+    final expenseKey = _expenseBox.keys.firstWhere(
+          (key) => _expenseBox.get(key)?.id == id,
+      orElse: () => null,
+    );
+    if (expenseKey != null) {
+      _expenseBox.delete(expenseKey);
+      notifyListeners();
+    }
   }
 }

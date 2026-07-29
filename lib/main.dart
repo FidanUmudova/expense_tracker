@@ -38,67 +38,104 @@ class HomeScreen extends StatelessWidget {
     final formKey = GlobalKey<FormState>();
     final titleController = TextEditingController();
     final amountController = TextEditingController();
+    String selectedCategoryModal = 'Food';
 
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
       builder: (ctx) {
-        return Padding(
-          padding: EdgeInsets.only(
-            top: 20,
-            left: 20,
-            right: 20,
-            bottom: MediaQuery.of(ctx).viewInsets.bottom + 20,
-          ),
-          child: Form(
-            key: formKey,
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                const Text(
-                  "Yeni Xərc Əlavə Et",
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+        return StatefulBuilder(
+          builder: (BuildContext context, StateSetter setStateModal) {
+            return Padding(
+              padding: EdgeInsets.only(
+                top: 20,
+                left: 20,
+                right: 20,
+                bottom: MediaQuery.of(ctx).viewInsets.bottom + 20,
+              ),
+              child: Form(
+                key: formKey,
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Text(
+                      "Yeni Xərc Əlavə Et",
+                      style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                    ),
+                    const SizedBox(height: 10),
+                    TextFormField(
+                      controller: titleController,
+                      decoration: const InputDecoration(labelText: 'Başlıq (Title)'),
+                      validator: (value) {
+                        if (value == null || value.trim().isEmpty) {
+                          return 'Başlıq boş ola bilməz!';
+                        }
+                        return null;
+                      },
+                    ),
+                    TextFormField(
+                      controller: amountController,
+                      keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                      decoration: const InputDecoration(labelText: 'Məbləğ (Amount)'),
+                      validator: (value) {
+                        if (value == null || value.trim().isEmpty) {
+                          return 'Məbləğ boş ola bilməz!';
+                        }
+                        if (double.tryParse(value) == null) {
+                          return 'Zəhmət olmasa yalnız rəqəm daxil edin!';
+                        }
+                        if (double.parse(value) <= 0) {
+                          return 'Məbləğ 0-dan böyük olmalıdır!';
+                        }
+                        return null;
+                      },
+                    ),
+                    const SizedBox(height: 10),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        const Text("Kateqoriya:"),
+                        DropdownButton<String>(
+                          value: selectedCategoryModal,
+                          items: ['Food', 'Transport', 'Bills', 'Entertainment']
+                              .map((cat) => DropdownMenuItem(value: cat, child: Text(cat)))
+                              .toList(),
+                          onChanged: (val) {
+                            if (val != null) {
+                              setStateModal(() {
+                                selectedCategoryModal = val;
+                              });
+                            }
+                          },
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 15),
+                    ElevatedButton(
+                      onPressed: () {
+                        if (formKey.currentState!.validate()) {
+                          // Yeni xərc obyektini yaradırıq
+                          final newExpense = Expense(
+                            id: DateTime.now().toString(),
+                            title: titleController.text,
+                            amount: double.parse(amountController.text),
+                            date: DateTime.now(),
+                            category: selectedCategoryModal,
+                          );
+
+                          // Provider vasitəsilə bazaya əlavə edirik
+                          context.read<ExpenseProvider>().addExpense(newExpense);
+
+                          Navigator.pop(ctx);
+                        }
+                      },
+                      child: const Text('Əlavə et'),
+                    ),
+                  ],
                 ),
-                const SizedBox(height: 10),
-                TextFormField(
-                  controller: titleController,
-                  decoration: const InputDecoration(labelText: 'Başlıq (Title)'),
-                  validator: (value) {
-                    if (value == null || value.trim().isEmpty) {
-                      return 'Başlıq boş ola bilməz!';
-                    }
-                    return null;
-                  },
-                ),
-                TextFormField(
-                  controller: amountController,
-                  keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                  decoration: const InputDecoration(labelText: 'Məbləğ (Amount)'),
-                  validator: (value) {
-                    if (value == null || value.trim().isEmpty) {
-                      return 'Məbləğ boş ola bilməz!';
-                    }
-                    if (double.tryParse(value) == null) {
-                      return 'Zəhmət olmasa yalnız rəqəm daxil edin!';
-                    }
-                    if (double.parse(value) <= 0) {
-                      return 'Məbləğ 0-dan böyük olmalıdır!';
-                    }
-                    return null;
-                  },
-                ),
-                const SizedBox(height: 15),
-                ElevatedButton(
-                  onPressed: () {
-                    if (formKey.currentState!.validate()) {
-                      Navigator.pop(ctx);
-                    }
-                  },
-                  child: const Text('Əlavə et'),
-                ),
-              ],
-            ),
-          ),
+              ),
+            );
+          },
         );
       },
     );
@@ -191,6 +228,9 @@ class HomeScreen extends StatelessWidget {
                         ],
                       ),
                     );
+                  },
+                  onDismissed: (direction) {
+                    context.read<ExpenseProvider>().deleteExpense(item.id);
                   },
                   child: ListTile(
                     leading: CircleAvatar(
